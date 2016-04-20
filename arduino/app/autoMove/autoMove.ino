@@ -35,7 +35,7 @@ bool startProgram = false;
 void setup() {
   pinMode(A7,INPUT);
   Serial.begin(9600);
-  Serial.println("Devnco Mbot Testing Area Start !");
+  Serial.println("AutoMove Starting …");
   lightSensor.lightOn();
 }
 
