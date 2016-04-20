@@ -5,14 +5,17 @@
 * Description        : Automove Program designed for mBot robot
 **************************************************************************/
 
-#include "MeMCore.h"
 /*
+ * Mapping
+ * 
  * PORT_3 : UltraSensor
  * PORT_4 : LineFinder
  * PORT_7 : Led
  * PORT_8 : LightSensor
  * PORT_9 : IRReceiver
  */
+
+#include "MeMCore.h"
 
 MeDCMotor motor1(M1);
 MeDCMotor motor2(M2);
@@ -35,10 +38,8 @@ void setup() {
   Serial.println("Devnco Mbot Testing Area Start !");
   lightSensor.lightOn();
 }
+
 void loop() {
-  
-  //Serial.println(ultraSensor.distanceCm());
-  Serial.println(startProgram);
   if( analogRead(A7) == 0 ){
     delay(200);
     buzzer.tone(700, 300);
@@ -55,10 +56,8 @@ void loop() {
   else {
     stopMotors();
   }
-
   //testLightSensor();
 }
-
 
 void avoidTheVoid(){
    int sensorState = lineFinder.readSensors();
@@ -188,7 +187,6 @@ void changeLedColor(int id, String color, int power){
   if( color == "blue" ){
     b = power;
   }
-
   if( color == "yellow" ){
     r = power;
     g = power;
