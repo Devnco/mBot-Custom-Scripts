@@ -21,12 +21,10 @@ MeDCMotor motor1(M1);
 MeDCMotor motor2(M2);
 MeUltrasonicSensor ultraSensor(PORT_3);
 MeLineFollower lineFinder(PORT_4);
-MeRGBLed led(PORT_7);
 MeLightSensor lightSensor(PORT_8);
 MeBuzzer buzzer;
-MeRGBLed led0(PORT_1);
-MeRGBLed led1(PORT_1, SLOT1, 15);
-MeRGBLed led2(PORT_1, SLOT2, 15);   /* parameter description: port, slot, led number */
+MeRGBLed ledOnboard(PORT_7);
+MeRGBLed ledExtra(PORT_1);
 
 float j, f, k;
 int16_t bri = 0, st = 0;
@@ -38,16 +36,67 @@ uint8_t goBackSpeed = 150;
 
 bool isMoving = false;
 bool startProgram = false;
+int activeMod = 0;
 
 void setup() {
   pinMode(A7,INPUT);
   Serial.begin(9600);
-  Serial.println("AutoMove Starting …");
+  Serial.println("Mutlimods Starting …");
   lightSensor.lightOn();
 }
 
 void loop() {
+  listendButton();
+
+  if( startProgram ){
+    switch( activeMod ){
+      case 0:
+          extraLedColorLoop();
+          autoMove("turnRight");
+          avoidTheVoid();
+        break;
+      case 1:
+          stopMotors();
+          changeLedColor(2, "red", 255);
+          ledExtra.setColorAt(0, 255, 0, 0);
+          ledExtra.setColorAt(1, 255, 0, 0);
+          ledExtra.setColorAt(2, 255, 0, 0);
+          ledExtra.setColorAt(3, 255, 0, 0);
+          ledExtra.show();
+          //changeLedColorX(0, "blue", 255, "board");
+          //buzzer.tone(300, 300);
+          delay(10);
+        break;
+      case 2:
+          stopMotors();
+          changeLedColor(2, "green", 255);
+          ledExtra.setColorAt(0, 0, 255, 0);
+          ledExtra.setColorAt(1, 0, 255, 0);
+          ledExtra.setColorAt(2, 0, 255, 0);
+          ledExtra.setColorAt(3, 0, 255, 0);
+          ledExtra.show();
+
+          //extraLedWhiteBreath();
+          //buzzer.tone(500, 300);
+          delay(10);
+        break;
+    }
+  }
+  else {
+    changeLedColor(2, "green", 0);
+    extraLedWhiteBreath();
+  }
+}
+
+void listendButton() {
   if( analogRead(A7) == 0 ){
+    if( startProgram ){
+      buzzer.tone(900, 300);
+      activeMod++;
+      if( activeMod >= 3){
+        activeMod = 0;
+      }
+    }
     delay(200);
     if( analogRead(A7) == 0 ){
       buzzer.tone(700, 300);
@@ -57,58 +106,8 @@ void loop() {
       startProgram = !startProgram;
     }
   }
-  if( startProgram ){
-    autoMove("turnRight");
-    avoidTheVoid();
-    extraLedColorLoop();
-  }
-  else {
-    stopMotors();
-    extraLedWhiteBreath();
-  }
 }
 
-void extraLedColorLoop() {
-  for(uint8_t t = 1; t < 15; t++)
-  {
-    uint8_t red  = 64 * (1 + sin(t / 2.0 + j / 4.0) );
-    uint8_t green = 64 * (1 + sin(t / 1.0 + f / 9.0 + 2.1) );
-    uint8_t blue = 64 * (1 + sin(t / 3.0 + k / 14.0 + 4.2) );
-    led0.setColorAt(t, red, green, blue);
-  }
-  led0.show();
-  j += random(1, 6) / 6.0;
-  f += random(1, 6) / 6.0;
-  k += random(1, 6) / 6.0;
-}
-
-void extraLedWhiteBreath() {
-  if(bri >= 100)
-  {
-    st = 1;
-  }
-  if(bri <= 0)
-  {
-    st = 0;
-  }
-
-  if(st)
-  {
-    bri--;
-  }
-  else
-  {
-    bri++;
-  }
-  for(int16_t t = 0; t < 15; t++)
-  {
-    led1.setColorAt(t, bri, bri, bri); /* parameter description: led number, red, green, blue, flash mode */
-    led2.setColorAt(t, bri, bri, bri);
-  }
-  led1.show();
-  led2.show();
-  delay(20);
-}
 void avoidTheVoid(){
    int sensorState = lineFinder.readSensors();
    switch( sensorState ){
@@ -183,14 +182,13 @@ void moveMbot( String action ){
     motor1.run(-turnSpeed);
     motor2.run(-turnSpeed);
     delay(750);
-    led.setColorAt(0, 0, 0, 255);
   }else if ( action == "goBack" ){
     changeLedColor(2,"red", 255);
     motor1.run(turnSpeed);
     motor2.run(turnSpeed);
     delay(1500);
   }else if ( action == "stepBack" ){
-    changeLedColor(2,"green", 100);
+    changeLedColor(2,"yellow", 100);
     motor1.run(goBackSpeed);
     motor2.run(-goBackSpeed);
     delay(500);
@@ -250,12 +248,51 @@ void changeLedColor(int id, String color, int power){
     r = power;
   }
   if( id == 2 ){
-    led.setColorAt(0, r, g, b);
-    led.setColorAt(1, r, g, b);
+    ledOnboard.setColorAt(0, r, g, b);
+    ledOnboard.setColorAt(1, r, g, b);
+    ledExtra.setColorAt(0, r, g, b);
+    ledExtra.setColorAt(1, r, g, b);
+    ledExtra.setColorAt(2, r, g, b);
+    ledExtra.setColorAt(3, r, g, b);
+    ledExtra.show();
   }
   else {
-    led.setColorAt(id, r, g, b);
+    ledOnboard.setColorAt(id, r, g, b);
   }
-  led.show();
+  ledOnboard.show();
 }
 
+void extraLedColorLoop() {
+  for(uint8_t t = 0; t < 15; t++)
+  {
+    uint8_t red  = 64 * (1 + sin(t / 2.0 + j / 4.0) );
+    uint8_t green = 64 * (1 + sin(t / 1.0 + f / 9.0 + 2.1) );
+    uint8_t blue = 64 * (1 + sin(t / 3.0 + k / 14.0 + 4.2) );
+    ledExtra.setColorAt(t, red, green, blue);
+  }
+  ledExtra.show();
+  j += random(1, 6) / 6.0;
+  f += random(1, 6) / 6.0;
+  k += random(1, 6) / 6.0;
+}
+
+void extraLedWhiteBreath() {
+  if(bri >= 100){
+    st = 1;
+  }
+  if(bri <= 0){
+    st = 0;
+  }
+
+  if(st){
+    bri--;
+  }
+  else{
+    bri++;
+  }
+  for(int16_t t = 0; t < 15; t++){
+    ledExtra.setColorAt(t, bri, bri, bri);
+  }
+  ledExtra.show();
+  delay(20);
+}
