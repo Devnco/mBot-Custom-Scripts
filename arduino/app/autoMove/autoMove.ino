@@ -24,9 +24,16 @@ MeLineFollower lineFinder(PORT_4);
 MeRGBLed led(PORT_7);
 MeLightSensor lightSensor(PORT_8);
 MeBuzzer buzzer;
+MeRGBLed led0(PORT_1);
+MeRGBLed led1(PORT_1, SLOT1, 15);
+MeRGBLed led2(PORT_1, SLOT2, 15);   /* parameter description: port, slot, led number */
 
-uint8_t motorSpeed = 100;
-uint8_t turnSpeed = 80;
+float j, f, k;
+int16_t bri = 0, st = 0;
+
+
+uint8_t motorSpeed = 200;
+uint8_t turnSpeed = 100;
 uint8_t goBackSpeed = 150;
 
 bool isMoving = false;
@@ -52,13 +59,57 @@ void loop() {
   if( startProgram ){
     autoMove("turnRight");
     avoidTheVoid();
+    color_loop();
   }
   else {
     stopMotors();
+    white_breath();
   }
   //testLightSensor();
 }
 
+void color_loop()
+{
+  for(uint8_t t = 1; t < 15; t++)
+  {
+    uint8_t red  = 64 * (1 + sin(t / 2.0 + j / 4.0) );
+    uint8_t green = 64 * (1 + sin(t / 1.0 + f / 9.0 + 2.1) );
+    uint8_t blue = 64 * (1 + sin(t / 3.0 + k / 14.0 + 4.2) );
+    led0.setColorAt(t, red, green, blue);
+  }
+  led0.show();
+  j += random(1, 6) / 6.0;
+  f += random(1, 6) / 6.0;
+  k += random(1, 6) / 6.0;
+}
+
+void white_breath(){
+  if(bri >= 100)
+  {
+    st = 1;
+  }
+  if(bri <= 0)
+  {
+    st = 0;
+  }
+
+  if(st)
+  {
+    bri--;
+  }
+  else
+  {
+    bri++;
+  }
+  for(int16_t t = 0; t < 15; t++)
+  {
+    led1.setColorAt(t, bri, bri, bri); /* parameter description: led number, red, green, blue, flash mode */
+    led2.setColorAt(t, bri, bri, bri);
+  }
+  led1.show();
+  led2.show();
+  delay(20);
+}
 void avoidTheVoid(){
    int sensorState = lineFinder.readSensors();
    switch( sensorState ){
@@ -140,7 +191,7 @@ void moveMbot( String action ){
     motor2.run(turnSpeed);
     delay(1500);
   }else if ( action == "stepBack" ){
-    changeLedColor(2,"yellow", 255);
+    changeLedColor(2,"green", 100);
     motor1.run(goBackSpeed);
     motor2.run(-goBackSpeed);
     delay(500);
