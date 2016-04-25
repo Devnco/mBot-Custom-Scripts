@@ -16,27 +16,37 @@
  */
 
 #include "MeMCore.h"
+#include <Servo.h>
+
 
 MeDCMotor motor1(M1);
 MeDCMotor motor2(M2);
 MeUltrasonicSensor ultraSensor(PORT_3);
-MeLineFollower lineFinder(PORT_4);
+MeLineFollower lineFinder1(PORT_4);
+MeLineFollower lineFinder2(PORT_2);
 MeLightSensor lightSensor(PORT_8);
 MeBuzzer buzzer;
 MeRGBLed ledOnboard(PORT_7);
 MeRGBLed ledExtra(PORT_1);
+MePort port(PORT_2);
 
 float j, f, k;
 int16_t bri = 0, st = 0;
 
 
-uint8_t motorSpeed = 200;
+uint8_t motorSpeed = 100;
 uint8_t turnSpeed = 100;
 uint8_t goBackSpeed = 150;
 
 bool isMoving = false;
 bool startProgram = false;
 int activeMod = 0;
+
+
+Servo myservo1;  // create servo object to control a servo 
+Servo myservo2;  // create servo object to control another servo
+int16_t servo1pin =  port.pin1();//attaches the servo on PORT_3 SLOT1 to the servo object
+int16_t servo2pin =  port.pin2();//attaches the servo on PORT_3 SLOT2 to the servo object
 
 void setup() {
   pinMode(A7,INPUT);
@@ -52,11 +62,12 @@ void loop() {
     switch( activeMod ){
       case 0:
           extraLedColorLoop();
-          autoMove("turnRight");
+          autoMove("turnLeft");
           avoidTheVoid();
         break;
       case 1:
           stopMotors();
+
           changeLedColor(2, "red", 255);
           ledExtra.setColorAt(0, 255, 0, 0);
           ledExtra.setColorAt(1, 255, 0, 0);
@@ -75,7 +86,6 @@ void loop() {
           ledExtra.setColorAt(2, 0, 255, 0);
           ledExtra.setColorAt(3, 0, 255, 0);
           ledExtra.show();
-
           //extraLedWhiteBreath();
           //buzzer.tone(500, 300);
           delay(10);
@@ -109,28 +119,48 @@ void listendButton() {
 }
 
 void avoidTheVoid(){
-   int sensorState = lineFinder.readSensors();
-   switch( sensorState ){
-      case 0:
-        moveMbot("stepBack");
-        moveMbot("goBack");
-        runMotors(motorSpeed);
-        break;
-      case 1:
-        moveMbot("stepBack");
-        moveMbot("turnRight");
-        runMotors(motorSpeed);
-        break;
-      case 2:
-        moveMbot("stepBack");
-        moveMbot("turnLeft");
-        runMotors(motorSpeed);
-        break;
-      case 3:
+  int sensorState1 = lineFinder1.readSensors();
+  int sensorState2 = lineFinder2.readSensors();
 
-        break;
-      default: break;
-   }
+  if( sensorState1 == 0 && sensorState2 == 0 ){
+    moveMbot("stepBack");
+    moveMbot("goBack");
+    runMotors(motorSpeed);
+  }
+  else {
+    if( sensorState1 == 0){
+      moveMbot("stepBack");
+      moveMbot("turnRight");
+      runMotors(motorSpeed);
+    }
+    if( sensorState2 == 0){
+      moveMbot("stepBack");
+      moveMbot("turnLeft");
+      runMotors(motorSpeed);
+    }
+  }
+
+   // switch( sensorState1 ){
+   //    case 0:
+   //      moveMbot("stepBack");
+   //      moveMbot("goBack");
+   //      runMotors(motorSpeed);
+   //      break;
+   //    case 1:
+   //      moveMbot("stepBack");
+   //      moveMbot("turnRight");
+   //      runMotors(motorSpeed);
+   //      break;
+   //    case 2:
+   //      moveMbot("stepBack");
+   //      moveMbot("turnLeft");
+   //      runMotors(motorSpeed);
+   //      break;
+   //    case 3:
+
+   //      break;
+   //    default: break;
+   // }
 }
 
 int randomBetween(int a, int b){
@@ -174,14 +204,24 @@ void moveMbot( String action ){
   Serial.println(action);
   if( action == "turnLeft" ){
     changeLedColor(1,"blue", 255);
+    ledExtra.setColorAt(0, 0, 0, 0);
+    ledExtra.setColorAt(1, 0, 0, 255);
+    ledExtra.setColorAt(2, 0, 0, 0);
+    ledExtra.setColorAt(3, 0, 0, 0);
+    ledExtra.show();
     motor1.run(turnSpeed);
     motor2.run(turnSpeed);
-    delay(750);
+    delay(300);
   }else if ( action == "turnRight" ) {
     changeLedColor(0,"blue", 255);
+    ledExtra.setColorAt(0, 0, 0, 0);
+    ledExtra.setColorAt(1, 0, 0, 0);
+    ledExtra.setColorAt(2, 0, 0, 0);
+    ledExtra.setColorAt(3, 0, 0, 255);
+    ledExtra.show();
     motor1.run(-turnSpeed);
     motor2.run(-turnSpeed);
-    delay(750);
+    delay(300);
   }else if ( action == "goBack" ){
     changeLedColor(2,"red", 255);
     motor1.run(turnSpeed);
